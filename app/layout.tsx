@@ -5,7 +5,7 @@ import { Inter } from 'next/font/google';
 import Bottombar from "../components/shared/Bottombar";
 import RightSidebar from "../components/shared/RightSidebar";
 import LeftSidebar from "../components/shared/LeftSidebar";
-import Topbar from "@/components/shared/Topbar";
+import Topbar from "../components/shared/Topbar";
 
 
 const inter = Inter({ subsets: ['latin' ] })
