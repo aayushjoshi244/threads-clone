@@ -16,8 +16,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { UserValidation } from "@/lib/validations/user";
 import * as z from "zod";
 import Image from "next/image";
-import { ChangeEvent } from "react";
+import { ChangeEvent, useState } from "react";
 import { Textarea } from "../ui/textarea";
+import { isBase64Image } from "@/lib/utils";
+import { useUploadThing } from "@/lib/uploadthing"
 
 interface Props {
   user: {
@@ -32,13 +34,15 @@ interface Props {
 }
 
 const AccountProfile = ({ user, btnTitle }: Props) => {
+  const [files, setFiles] = useState<File[]>([]);
+  const { startUpload } = useUploadThing("media");
   const form = useForm<z.infer<typeof UserValidation>>({
     resolver: zodResolver(UserValidation),
     defaultValues: {
-      profile_photo: user.image,
-      name: user.name,
-      username: user.username,
-      bio: user.bio,
+      profile_photo: user?.image || "",
+      name: user?.name || "",
+      username: user?.username || "",
+      bio: user?.bio || "",
     },
   });
 
@@ -56,8 +60,20 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
     }
   };
 
-  const onSubmit = (values: z.infer<typeof UserValidation>) => {
-    console.log(values);
+  const onSubmit = async (values: z.infer<typeof UserValidation>) => {
+    const blob = values.profile_photo;
+
+    const hasImageCHanged = isBase64Image(blob);
+
+    if(hasImageCHanged) {
+        const imgRes = await startUpload(files)
+
+        if (imgRes && imgRes.length > 0 && 'fileUrl' in imgRes[0]) {
+            values.profile_photo = (imgRes[0] as { fileUrl: string }).fileUrl;
+          }
+    }
+
+    // TODO: Update user profile
   };
 
   return (
@@ -108,11 +124,11 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem className="flex items-center gap-3 w-full">
+            <FormItem className="flex flex-col gap-3 w-full">
               <FormLabel className="text-base-semibold text-gray-200">
                 Name
               </FormLabel>
-              <FormControl className="flex-1 text-base-semibold text-gray-200">
+              <FormControl>
                 <Input
                   type="text"
                   className="account-form_input no-focus"
@@ -127,11 +143,11 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
           control={form.control}
           name="username"
           render={({ field }) => (
-            <FormItem className="flex items-center gap-3 w-full">
+            <FormItem className="flex flex-col gap-3 w-full">
               <FormLabel className="text-base-semibold text-gray-200">
                 Username
               </FormLabel>
-              <FormControl className="flex-1 text-base-semibold text-gray-200">
+              <FormControl>
                 <Input
                   type="text"
                   className="account-form_input no-focus"
@@ -146,11 +162,11 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
           control={form.control}
           name="bio"
           render={({ field }) => (
-            <FormItem className="flex items-center gap-3 w-full">
+            <FormItem className="flex flex-col gap-3 w-full">
               <FormLabel className="text-base-semibold text-gray-200">
                 Bio
               </FormLabel>
-              <FormControl className="flex-1 text-base-semibold text-gray-200">
+              <FormControl>
                 <Textarea
                   rows={10}
                   className="account-form_input no-focus"
@@ -160,7 +176,9 @@ const AccountProfile = ({ user, btnTitle }: Props) => {
             </FormItem>
           )}
         />
-        <Button type="submit" className="bg-primary-500">{btnTitle}</Button>
+        <Button type="submit" className="bg-primary-500">
+          {btnTitle}
+        </Button>
       </form>
     </Form>
   );
